@@ -3,7 +3,7 @@
 <h1 class="text-2xl font-bold mb-4">Cek Harga Pengiriman</h1>
 
 <div class="bg-white p-6 rounded shadow mb-6">
-    <form method="POST" action="/cek_harga" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <form method="POST" action="/cek_harga" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
             <label class="block text-gray-700 mb-2">Kota Asal</label>
             <select name="kota_asal" class="w-full p-2 border rounded" required>
@@ -22,8 +22,20 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="flex items-end">
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Cek Harga</button>
+        <div>
+            <label class="block text-gray-700 mb-2">Berat (kg)</label>
+            <input type="number" step="0.01" name="berat_kg" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="col-span-1 md:col-span-2 lg:col-span-1">
+            <label class="block text-gray-700 mb-2">Dimensi (m) <span class="text-gray-500 text-sm">(Opsional)</span></label>
+            <div class="flex space-x-2">
+                <input type="number" step="0.01" name="dimensi_p" placeholder="P" class="w-full p-2 border rounded">
+                <input type="number" step="0.01" name="dimensi_l" placeholder="L" class="w-full p-2 border rounded">
+                <input type="number" step="0.01" name="dimensi_t" placeholder="T" class="w-full p-2 border rounded">
+            </div>
+        </div>
+        <div class="flex items-end lg:col-span-4">
+            <button type="submit" class="w-full md:w-auto bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Cek Harga</button>
         </div>
     </form>
 </div>
@@ -32,7 +44,12 @@
 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow">
     <p class="font-bold">Tarif Ditemukan!</p>
     <p>Rute: {{ hasil.kota_asal }} &rarr; {{ hasil.kota_tujuan }}</p>
-    <p class="text-xl mt-2">Harga: Rp {{ hasil.harga }}</p>
+    <div class="mt-2 text-sm">
+        <p>Harga Dasar: {{ hasil.harga_dasar|rupiah }}</p>
+        <p>Harga per kg: {{ hasil.harga_per_kg|rupiah }} (Berat: {{ kalkulasi.berat }} kg)</p>
+        <p>Harga per m³: {{ hasil.harga_per_m3|rupiah }} (Volume: {{ kalkulasi.volume }} m³)</p>
+    </div>
+    <p class="text-xl font-bold mt-2">Estimasi Total Harga: {{ kalkulasi.estimasi|rupiah }}</p>
 </div>
 {% endif %}
 {% endblock %}

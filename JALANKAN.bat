@@ -1,21 +1,17 @@
 @echo off
+title Logistik Admin App
+echo Memulai Sistem...
+echo Pastikan XAMPP (Apache & MySQL) sudah menyala!
 
-echo Menyiapkan Virtual Environment...
-if not exist venv (
+if not exist "venv\" (
     python -m venv venv
+    call venv\Scripts\activate.bat
+    pip install -r requirements.txt
+) else (
+    call venv\Scripts\activate.bat
 )
 
-echo Mengaktifkan Virtual Environment...
-call venv\Scripts\activate
-
-echo Menginstal Dependensi...
-pip install -r requirements.txt
-
-echo Mengekspor Environment Variables...
-set FLASK_DEBUG=1
-set FLASK_APP=app.py
-
-echo Menjalankan Aplikasi Flask...
+echo Server berjalan! Buka http://localhost:5000
+start http://localhost:5000
 python app.py
-
 pause

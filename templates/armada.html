@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Manajemen Armada</h1>
+
+<div class="bg-white p-6 rounded shadow mb-6">
+    {% if armada_to_edit %}
+    <h2 class="text-xl font-semibold mb-4">Edit Armada #{{ armada_to_edit.id }}</h2>
+    <form method="POST" action="{{ url_for('edit_armada', id=armada_to_edit.id) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    {% else %}
+    <h2 class="text-xl font-semibold mb-4">Tambah Armada Baru</h2>
+    <form method="POST" action="{{ url_for('add_armada') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    {% endif %}
+        <div>
+            <label class="block text-gray-700 mb-2">Plat Nomor</label>
+            <input type="text" name="plat_nomor" value="{{ armada_to_edit.plat_nomor if armada_to_edit else '' }}" class="w-full p-2 border rounded" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Tipe Armada</label>
+            <select name="tipe_armada" class="w-full p-2 border rounded" required>
+                <option value="Tronton" {% if armada_to_edit and armada_to_edit.tipe_armada == 'Tronton' %}selected{% endif %}>Tronton</option>
+                <option value="Trailer" {% if armada_to_edit and armada_to_edit.tipe_armada == 'Trailer' %}selected{% endif %}>Trailer</option>
+                <option value="Dolly" {% if armada_to_edit and armada_to_edit.tipe_armada == 'Dolly' %}selected{% endif %}>Dolly</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Status</label>
+            <select name="status" class="w-full p-2 border rounded" required>
+                <option value="Tersedia" {% if armada_to_edit and armada_to_edit.status == 'Tersedia' %}selected{% endif %}>Tersedia</option>
+                <option value="Beroperasi" {% if armada_to_edit and armada_to_edit.status == 'Beroperasi' %}selected{% endif %}>Beroperasi</option>
+            </select>
+        </div>
+        <div class="flex items-end space-x-2">
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">{% if armada_to_edit %}Update Armada{% else %}Tambah Armada{% endif %}</button>
+            {% if armada_to_edit %}
+            <a href="{{ url_for('armada') }}" class="w-full text-center bg-gray-300 text-gray-800 py-2 rounded hover:bg-gray-400">Batal</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="bg-white rounded shadow overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-3 border-b">ID</th>
+                <th class="p-3 border-b">Plat Nomor</th>
+                <th class="p-3 border-b">Tipe Armada</th>
+                <th class="p-3 border-b">Status</th>
+                <th class="p-3 border-b">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for armada in armadas %}
+            <tr class="{% if armada_to_edit and armada_to_edit.id == armada.id %}bg-yellow-100{% endif %}">
+                <td class="p-3 border-b">{{ armada.id }}</td>
+                <td class="p-3 border-b">{{ armada.plat_nomor }}</td>
+                <td class="p-3 border-b">{{ armada.tipe_armada }}</td>
+                <td class="p-3 border-b">
+                    <span class="px-2 py-1 rounded text-sm text-white {% if armada.status == 'Tersedia' %}bg-green-500{% else %}bg-yellow-500{% endif %}">{{ armada.status }}</span>
+                </td>
+                <td class="p-3 border-b flex space-x-2">
+                    <a href="{{ url_for('armada', edit_id=armada.id) }}" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">Edit</a>
+                    <a href="{{ url_for('delete_armada', id=armada.id) }}" onclick="return confirm('Anda yakin ingin menghapus armada ini?')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Hapus</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

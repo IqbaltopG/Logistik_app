@@ -16,6 +16,10 @@
                 {% if session.get('role') == 'customer' %}
                 <li><a href="/cek_harga" class="hover:underline">Cek Harga</a></li>
                 {% endif %}
+                {% if session.get('role') == 'admin' %}
+                <li><a href="/tarif" class="hover:underline">Manajemen Rute</a></li>
+                <li><a href="/armada" class="hover:underline">Manajemen Armada</a></li>
+                {% endif %}
                 <li><a href="/orders" class="hover:underline">Orders</a></li>
                 <li><a href="/pengiriman" class="hover:underline">Pengiriman</a></li>
                 <li><a href="/logout" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout ({{ session.get('username') }})</a></li>

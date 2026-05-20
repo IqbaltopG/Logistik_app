@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 border rounded-lg shadow-lg mt-10">
+    <h2 class="text-2xl font-bold mb-6 text-center">Daftar Akun Logistik</h2>
+    <form method="POST" action="/register">
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Username</label>
+            <input type="text" name="username" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Password</label>
+            <input type="password" name="password" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="mb-6">
+            <label class="block text-gray-700 mb-2">Konfirmasi Password</label>
+            <input type="password" name="confirm_password" class="w-full p-2 border rounded" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Daftar</button>
+        <div class="mt-4 text-center">
+            <span class="text-gray-600 text-sm">Sudah punya akun? <a href="/login" class="text-blue-600 hover:underline">Login di sini</a></span>
+        </div>
+    </form>
+</div>
+{% endblock %}
