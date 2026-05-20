@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Cek Harga Pengiriman</h1>
+
+<div class="bg-white p-6 rounded shadow mb-6">
+    <form method="POST" action="/cek_harga" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-gray-700 mb-2">Kota Asal</label>
+            <select name="kota_asal" class="w-full p-2 border rounded" required>
+                <option value="">Pilih Kota Asal</option>
+                {% for kota in kotas %}
+                <option value="{{ kota }}">{{ kota }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Kota Tujuan</label>
+            <select name="kota_tujuan" class="w-full p-2 border rounded" required>
+                <option value="">Pilih Kota Tujuan</option>
+                {% for kota in tujuans %}
+                <option value="{{ kota }}">{{ kota }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Cek Harga</button>
+        </div>
+    </form>
+</div>
+
+{% if hasil %}
+<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow">
+    <p class="font-bold">Tarif Ditemukan!</p>
+    <p>Rute: {{ hasil.kota_asal }} &rarr; {{ hasil.kota_tujuan }}</p>
+    <p class="text-xl mt-2">Harga: Rp {{ hasil.harga }}</p>
+</div>
+{% endif %}
+{% endblock %}

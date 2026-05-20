@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Daftar Orders</h1>
+
+{% if session.role == 'customer' %}
+<div class="bg-white p-6 rounded shadow mb-6">
+    <h2 class="text-xl font-semibold mb-4">Request Pengiriman (Order Baru)</h2>
+    <form method="POST" action="/orders" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-gray-700 mb-2">Kota Asal</label>
+            <input type="text" name="kota_asal" class="w-full p-2 border rounded" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Kota Tujuan</label>
+            <input type="text" name="kota_tujuan" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="md:col-span-3">
+            <label class="block text-gray-700 mb-2">Detail Barang</label>
+            <textarea name="detail_barang" class="w-full p-2 border rounded" rows="3" required></textarea>
+        </div>
+        <div class="md:col-span-3">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buat Order</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<div class="bg-white rounded shadow overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-3 border-b">ID Order</th>
+                <th class="p-3 border-b">Customer</th>
+                <th class="p-3 border-b">Rute</th>
+                <th class="p-3 border-b">Detail Barang</th>
+                <th class="p-3 border-b">Status Order</th>
+                {% if session.role == 'admin' %}
+                <th class="p-3 border-b">Aksi (Validasi)</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td class="p-3 border-b">{{ order.id }}</td>
+                <td class="p-3 border-b">{{ order.user.username }}</td>
+                <td class="p-3 border-b">{{ order.kota_asal }} - {{ order.kota_tujuan }}</td>
+                <td class="p-3 border-b">{{ order.detail_barang }}</td>
+                <td class="p-3 border-b">
+                    <span class="px-2 py-1 rounded text-sm text-white 
+                        {% if order.status_order == 'Pending' %}bg-yellow-500
+                        {% elif order.status_order == 'Valid' %}bg-green-500
+                        {% else %}bg-red-500{% endif %}">
+                        {{ order.status_order }}
+                    </span>
+                </td>
+                {% if session.role == 'admin' %}
+                <td class="p-3 border-b">
+                    {% if order.status_order == 'Pending' %}
+                    <form method="POST" action="/orders/validate/{{ order.id }}" class="inline">
+                        <input type="hidden" name="status_order" value="Valid">
+                        <button type="submit" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">Valid</button>
+                    </form>
+                    <form method="POST" action="/orders/validate/{{ order.id }}" class="inline">
+                        <input type="hidden" name="status_order" value="Tidak Valid">
+                        <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">Tidak Valid</button>
+                    </form>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="p-3 text-center text-gray-500 border-b">Belum ada order.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

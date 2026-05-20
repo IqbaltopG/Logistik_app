@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">Dashboard ({{ session.role|capitalize }})</h1>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white p-6 rounded shadow border-t-4 border-blue-500">
+        <h3 class="text-gray-500">Total Orders</h3>
+        <p class="text-3xl font-bold">{{ total_orders }}</p>
+    </div>
+    <div class="bg-white p-6 rounded shadow border-t-4 border-yellow-500">
+        <h3 class="text-gray-500">Pending Orders</h3>
+        <p class="text-3xl font-bold">{{ pending_orders }}</p>
+    </div>
+    <div class="bg-white p-6 rounded shadow border-t-4 border-green-500">
+        <h3 class="text-gray-500">Pengiriman Di Perjalanan</h3>
+        <p class="text-3xl font-bold">{{ pengiriman_berjalan }}</p>
+    </div>
+    <div class="bg-white p-6 rounded shadow border-t-4 border-purple-500">
+        <h3 class="text-gray-500">Pengiriman Selesai</h3>
+        <p class="text-3xl font-bold">{{ pengiriman_selesai }}</p>
+    </div>
+</div>
+{% endblock %}

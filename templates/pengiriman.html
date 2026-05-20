@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Daftar Pengiriman</h1>
+
+{% if session.role == 'admin' %}
+<div class="bg-white p-6 rounded shadow mb-6">
+    <h2 class="text-xl font-semibold mb-4">Penjadwalan Pengiriman</h2>
+    {% if orders_ready %}
+    <form method="POST" action="/pengiriman" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label class="block text-gray-700 mb-2">Order</label>
+            <select name="order_id" class="w-full p-2 border rounded" required>
+                {% for o in orders_ready %}
+                <option value="{{ o.id }}">Order #{{ o.id }} - {{ o.user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Nama Driver</label>
+            <input type="text" name="driver_nama" class="w-full p-2 border rounded" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Plat Armada</label>
+            <input type="text" name="armada_plat" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Assign Driver</button>
+        </div>
+    </form>
+    {% else %}
+    <p class="text-gray-500">Tidak ada order Valid yang perlu dijadwalkan.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="bg-white rounded shadow overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-3 border-b">ID Pengiriman</th>
+                <th class="p-3 border-b">Order Detail</th>
+                <th class="p-3 border-b">Driver & Armada</th>
+                <th class="p-3 border-b">Status Pengiriman</th>
+                <th class="p-3 border-b">e-POD (Ref)</th>
+                {% if session.role == 'admin' %}
+                <th class="p-3 border-b">Update Status</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pengiriman %}
+            <tr>
+                <td class="p-3 border-b">{{ p.id }}</td>
+                <td class="p-3 border-b">#{{ p.order_id }} ({{ p.order.kota_asal }} - {{ p.order.kota_tujuan }})</td>
+                <td class="p-3 border-b">{{ p.driver_nama }} ({{ p.armada_plat }})</td>
+                <td class="p-3 border-b">
+                    <span class="px-2 py-1 rounded text-sm text-white 
+                        {% if p.status_pengiriman == 'Penjadwalan' %}bg-yellow-500
+                        {% elif p.status_pengiriman == 'Di Perjalanan' %}bg-blue-500
+                        {% else %}bg-green-500{% endif %}">
+                        {{ p.status_pengiriman }}
+                    </span>
+                </td>
+                <td class="p-3 border-b">{{ p.epod_ref or '-' }}</td>
+                
+                {% if session.role == 'admin' %}
+                <td class="p-3 border-b">
+                    {% if p.status_pengiriman != 'Terkirim' %}
+                    <form method="POST" action="/pengiriman/update/{{ p.id }}" class="flex flex-col space-y-2">
+                        <select name="status_pengiriman" class="p-1 border rounded text-sm w-full" required>
+                            <option value="Penjadwalan" {% if p.status_pengiriman == 'Penjadwalan' %}selected{% endif %}>Penjadwalan</option>
+                            <option value="Di Perjalanan" {% if p.status_pengiriman == 'Di Perjalanan' %}selected{% endif %}>Di Perjalanan</option>
+                            <option value="Terkirim">Terkirim</option>
+                        </select>
+                        <input type="text" name="epod_ref" placeholder="Ref e-POD (jika Terkirim)" class="p-1 border rounded text-sm w-full">
+                        <button type="submit" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">Update</button>
+                    </form>
+                    {% else %}
+                        Selesai
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="p-3 text-center text-gray-500 border-b">Belum ada data pengiriman.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

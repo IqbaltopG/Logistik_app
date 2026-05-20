@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Logistik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    {% if session.get('user_id') %}
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-xl font-bold">Logistik App</a>
+            <ul class="flex space-x-4">
+                <li><a href="/" class="hover:underline">Dashboard</a></li>
+                {% if session.get('role') == 'customer' %}
+                <li><a href="/cek_harga" class="hover:underline">Cek Harga</a></li>
+                {% endif %}
+                <li><a href="/orders" class="hover:underline">Orders</a></li>
+                <li><a href="/pengiriman" class="hover:underline">Pengiriman</a></li>
+                <li><a href="/logout" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout ({{ session.get('username') }})</a></li>
+            </ul>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container mx-auto p-4 mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
