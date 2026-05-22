@@ -13,6 +13,14 @@ else
     source venv/bin/activate
 fi
 
+# ---> MASUKKAN DI SINI <---
+echo "📥 Mengimpor data tarif asli dari file CSV..."
+python3 import_tarif.py
+# --------------------------
+
+echo "🌱 Melakukan seeding pesanan dummy (flask seed)..."
+flask seed
+
 echo "🚀 Menyandera server... Aplikasi berjalan di http://localhost:5000"
 export FLASK_DEBUG=1
 python3 app.py

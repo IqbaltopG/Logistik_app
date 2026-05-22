@@ -7,45 +7,39 @@
     <h2 class="text-xl font-semibold mb-4">Request Pengiriman (Order Baru)</h2>
     <form method="POST" action="/orders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-            <label class="block text-gray-700 mb-2">Kota Asal</label>
-            <select name="kota_asal" class="w-full p-2 border rounded" required>
-                <option value="">Pilih Kota Asal</option>
-                {% for kota in kotas %}
-                <option value="{{ kota }}">{{ kota }}</option>
+            <label class="block text-gray-700 mb-2">Rute</label>
+            <select name="rute" class="w-full p-2 border rounded" required>
+                <option value="">Pilih Rute</option>
+                {% for rute in rutes %}
+                <option value="{{ rute }}">{{ rute }}</option>
                 {% endfor %}
             </select>
         </div>
         <div>
-            <label class="block text-gray-700 mb-2">Kota Tujuan</label>
-            <select name="kota_tujuan" class="w-full p-2 border rounded" required>
-                <option value="">Pilih Kota Tujuan</option>
-                {% for kota in tujuans %}
-                <option value="{{ kota }}">{{ kota }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="block text-gray-700 mb-2">Tipe Barang</label>
-            <select name="tipe_barang" class="w-full p-2 border rounded" required>
+            <label class="block text-gray-700 mb-2">Jenis Layanan</label>
+            <select name="jenis_layanan" class="w-full p-2 border rounded" required>
                 <option value="Container">Container</option>
                 <option value="Cargo">Cargo</option>
             </select>
         </div>
         <div>
-            <label class="block text-gray-700 mb-2">Berat (kg)</label>
-            <input type="number" step="0.01" name="berat_kg" class="w-full p-2 border rounded" required>
+            <label class="block text-gray-700 mb-2">Jenis Armada</label>
+            <select name="jenis_armada" class="w-full p-2 border rounded" required>
+                <option value="">Pilih Armada</option>
+                <option value="CDD">CDD</option>
+                <option value="Fuso">Fuso</option>
+                <option value="Tronton">Tronton</option>
+                <option value="Trailer 20 Feet">Trailer 20 Feet</option>
+                <option value="Trailer 40 Feet">Trailer 40 Feet</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-2">Jumlah Unit</label>
+            <input type="number" name="jumlah_unit" min="1" value="1" class="w-full p-2 border rounded" required>
         </div>
         <div class="lg:col-span-2">
-            <label class="block text-gray-700 mb-2">Dimensi (P x L x T dalam meter) <span class="text-gray-500 text-sm">(Opsional)</span></label>
-            <div class="flex space-x-2">
-                <input type="number" step="0.01" name="dimensi_p" placeholder="P" class="w-full p-2 border rounded">
-                <input type="number" step="0.01" name="dimensi_l" placeholder="L" class="w-full p-2 border rounded">
-                <input type="number" step="0.01" name="dimensi_t" placeholder="T" class="w-full p-2 border rounded">
-            </div>
-        </div>
-        <div class="lg:col-span-3">
             <label class="block text-gray-700 mb-2">Detail Barang</label>
-            <textarea name="detail_barang" class="w-full p-2 border rounded" rows="3" required></textarea>
+            <textarea name="detail_barang" class="w-full p-2 border rounded" rows="1" required></textarea>
         </div>
         <div class="lg:col-span-3">
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buat Order</button>
@@ -54,68 +48,215 @@
 </div>
 {% endif %}
 
-<div class="bg-white rounded shadow overflow-x-auto">
-    <table class="w-full text-left border-collapse">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="p-3 border-b">ID Order</th>
-                <th class="p-3 border-b">Customer</th>
-                <th class="p-3 border-b">Rute</th>
-                <th class="p-3 border-b">Tipe & Spesifikasi</th>
-                <th class="p-3 border-b">Estimasi Harga</th>
-                <th class="p-3 border-b">Status Order</th>
-                {% if session.role == 'admin' %}
-                <th class="p-3 border-b">Aksi (Validasi)</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td class="p-3 border-b">{{ order.id }}</td>
-                <td class="p-3 border-b">{{ order.user.username }}</td>
-                <td class="p-3 border-b">{{ order.kota_asal }} - {{ order.kota_tujuan }}</td>
-                <td class="p-3 border-b text-sm">
-                    <b>{{ order.tipe_barang }}</b><br>
-                    {{ order.berat_kg }} kg
-                    {% if order.dimensi_p and order.dimensi_l and order.dimensi_t %}
-                    | {{ order.dimensi_p }}x{{ order.dimensi_l }}x{{ order.dimensi_t }} m
+{% if session.role == 'admin' %}
+    {% set active_tab = request.args.get('tab', 'menunggu_validasi') %}
+
+    <!-- Navigasi Tabs Menyamping -->
+    <div class="mt-4 mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
+                <a href="?tab=belum_bayar" class="whitespace-nowrap py-4 px-1 border-b-2 text-sm transition-colors {% if active_tab == 'belum_bayar' %}border-blue-500 text-blue-600 font-bold{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">Belum Bayar</a>
+                <a href="?tab=menunggu_validasi" class="whitespace-nowrap py-4 px-1 border-b-2 text-sm transition-colors {% if active_tab == 'menunggu_validasi' %}border-blue-500 text-blue-600 font-bold{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">Menunggu Validasi</a>
+                <a href="?tab=lunas" class="whitespace-nowrap py-4 px-1 border-b-2 text-sm transition-colors {% if active_tab == 'lunas' %}border-blue-500 text-blue-600 font-bold{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">Perlu Diproses</a>
+                <a href="?tab=dibatalkan" class="whitespace-nowrap py-4 px-1 border-b-2 text-sm transition-colors {% if active_tab == 'dibatalkan' %}border-red-500 text-red-600 font-bold{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">Dibatalkan</a>
+                <a href="?tab=history" class="whitespace-nowrap py-4 px-1 border-b-2 text-sm transition-colors {% if active_tab == 'history' %}border-gray-800 text-gray-900 font-bold{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">Semua Riwayat</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Single Table Dinamis Berdasarkan Tab -->
+    <div class="bg-white rounded-xl shadow-md overflow-x-auto border border-gray-100 mb-8">
+        <table class="w-full text-left border-collapse min-w-max">
+            <thead class="bg-gray-50 text-gray-700 border-b">
+                <tr>
+                    <th class="p-4 font-semibold text-sm">ID Order</th>
+                    <th class="p-4 font-semibold text-sm">Customer</th>
+                    <th class="p-4 font-semibold text-sm">Rute & Detail</th>
+                    <th class="p-4 font-semibold text-sm">Total Harga</th>
+                    <th class="p-4 font-semibold text-sm">Status</th>
+                    {% if active_tab == 'dibatalkan' %}
+                    <th class="p-4 font-semibold text-sm">Alasan Pembatalan</th>
                     {% endif %}
-                    <br>
-                    <i>{{ order.detail_barang }}</i>
-                </td>
-                <td class="p-3 border-b">{{ order.estimasi_harga|rupiah }}</td>
-                <td class="p-3 border-b">
-                    <span class="px-2 py-1 rounded text-sm text-white 
-                        {% if order.status_order == 'Pending' %}bg-yellow-500
-                        {% elif order.status_order == 'Valid' %}bg-green-500
-                        {% else %}bg-red-500{% endif %}">
-                        {{ order.status_order }}
-                    </span>
-                </td>
-                {% if session.role == 'admin' %}
-                <td class="p-3 border-b">
-                    {% if order.status_order == 'Pending' %}
-                    <form method="POST" action="/orders/validate/{{ order.id }}" class="inline">
-                        <input type="hidden" name="status_order" value="Valid">
-                        <button type="submit" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">Valid</button>
-                    </form>
-                    <form method="POST" action="/orders/validate/{{ order.id }}" class="inline">
-                        <input type="hidden" name="status_order" value="Tidak Valid">
-                        <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">Tidak Valid</button>
-                    </form>
-                    {% else %}
-                        -
+                    <th class="p-4 font-semibold text-sm w-auto">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% set ns = namespace(found=false) %}
+                {% for order in orders %}
+                    
+                    {# Set Filter Logika per Tab #}
+                    {% set show = false %}
+                    {% if active_tab == 'belum_bayar' and order.status_pembayaran == 'Belum Bayar' %}
+                        {% set show = true %}
+                    {% elif active_tab == 'menunggu_validasi' and order.status_pembayaran in ['Menunggu Pembayaran', 'Menunggu Validasi'] %}
+                        {% set show = true %}
+                    {% elif active_tab == 'lunas' and order.status_pembayaran == 'Lunas' and order.status_order == 'Pending' %}
+                        {% set show = true %}
+                    {% elif active_tab == 'dibatalkan' and order.status_order == 'Tidak Valid' %}
+                        {% set show = true %}
+                    {% elif active_tab == 'history' and order.status_order == 'Valid' %}
+                        {% set show = true %}
                     {% endif %}
-                </td>
+
+                    {% if show %}
+                        {% set ns.found = true %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="p-4 font-medium text-gray-800">#{{ order.id }}</td>
+                            <td class="p-4 text-gray-600">{{ order.user.username }}</td>
+                            <td class="p-4 text-sm text-gray-600">
+                                <div class="font-bold text-gray-800">{{ order.rute }}</div>
+                                <div>{{ order.jenis_armada }} ({{ order.jumlah_unit }} Unit)</div>
+                                {% if order.detail_barang %}
+                                <div class="italic text-gray-400 mt-1">{{ order.detail_barang }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="p-4 font-semibold text-gray-800">{{ order.total_harga|rupiah }}</td>
+                            <td class="p-4">
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-medium border {% if order.status_pembayaran == 'Lunas' %}bg-green-100 text-green-700 border-green-200{% else %}bg-yellow-100 text-yellow-700 border-yellow-200{% endif %}">
+                                        {{ order.status_pembayaran }}
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-medium border {% if order.status_order == 'Valid' %}bg-blue-100 text-blue-700 border-blue-200{% elif order.status_order == 'Tidak Valid' %}bg-red-100 text-red-700 border-red-200{% else %}bg-gray-100 text-gray-700 border-gray-200{% endif %}">
+                                        {{ order.status_order }}
+                                    </span>
+                                </div>
+                            </td>
+                            
+                            {% if active_tab == 'dibatalkan' %}
+                            <td class="p-4 text-sm text-gray-600 italic">
+                                {% if order.alasan_pembatalan is defined %}
+                                    {{ order.alasan_pembatalan | default('Tidak ada keterangan') }}
+                                {% else %}
+                                    Tidak ada keterangan
+                                {% endif %}
+                                {% if order.cancelled_by %}
+                                    <span class="block mt-1 text-xs font-semibold text-red-500">Oleh: {{ order.cancelled_by }}</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            
+                            <td class="p-4">
+                                {% if active_tab in ['belum_bayar', 'menunggu_validasi'] %}
+                                    <form method="POST" action="/admin/order/{{ order.id }}/validasi_pembayaran" class="mb-2">
+                                        <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors shadow-sm">Validasi Lunas</button>
+                                    </form>
+                                    <form method="POST" action="/admin/order/{{ order.id }}/tolak">
+                                        <input type="text" name="alasan" placeholder="Alasan penolakan..." required class="py-1 px-2 border border-gray-300 rounded-md text-xs w-full focus:ring-red-500 focus:border-red-500 outline-none shadow-sm mb-1">
+                                        <button type="submit" class="w-full bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-600 transition-colors shadow-sm whitespace-nowrap">Tolak</button>
+                                    </form>
+                                {% elif active_tab == 'lunas' %}
+                                    <div class="flex items-center gap-3">
+                                        <form method="POST" action="/orders/edit/{{ order.id }}" class="flex items-center gap-2">
+                                            <input type="hidden" name="status_pembayaran" value="Lunas">
+                                            <input type="text" name="no_resi" value="{{ order.no_resi or '' }}" placeholder="No. Resi" class="py-1.5 px-3 border border-gray-300 rounded-md text-sm w-36 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm" required>
+                                            <button type="submit" class="bg-gray-800 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm whitespace-nowrap">Simpan</button>
+                                        </form>
+                                        <div class="h-6 w-px bg-gray-300"></div>
+                                        <form method="POST" action="/orders/validate/{{ order.id }}">
+                                            <input type="hidden" name="status_order" value="Valid">
+                                            <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">Proses</button>
+                                        </form>
+                                        <form method="POST" action="/admin/order/{{ order.id }}/tolak" class="flex flex-col gap-1">
+                                            <input type="text" name="alasan" placeholder="Alasan penolakan..." required class="py-1 px-2 border border-gray-300 rounded-md text-xs w-32 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm">
+                                            <button type="submit" class="w-full bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-600 transition-colors shadow-sm whitespace-nowrap">Tolak</button>
+                                        </form>
+                                    </div>
+                                {% elif active_tab == 'history' %}
+                                    {% if order.no_resi %}
+                                        <span class="font-mono text-sm bg-gray-50 px-2 py-1 rounded border border-gray-200 text-gray-600">Resi: {{ order.no_resi }}</span>
+                                    {% else %}
+                                        <span class="text-sm text-gray-400 italic">Tanpa Resi</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-gray-400 text-sm">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if not ns.found %}
+                <tr>
+                    <td colspan="{% if active_tab == 'dibatalkan' %}7{% else %}6{% endif %}" class="p-8 text-center text-gray-500 italic">
+                        Tidak ada data pesanan di tab ini.
+                    </td>
+                </tr>
                 {% endif %}
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7" class="p-3 text-center text-gray-500 border-b">Belum ada order.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
+
+{% else %}
+
+    <!-- TAMPILAN CUSTOMER: Bersih tanpa logika admin -->
+    <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-100 text-gray-700">
+                    <th class="p-4 border-b font-semibold text-sm">ID Order</th>
+                    <th class="p-4 border-b font-semibold text-sm">Rute</th>
+                    <th class="p-4 border-b font-semibold text-sm">Tipe & Spesifikasi</th>
+                    <th class="p-4 border-b font-semibold text-sm">Total Harga</th>
+                    <th class="p-4 border-b font-semibold text-sm">Status Order</th>
+                    <th class="p-4 border-b font-semibold text-sm">Status Pembayaran</th>
+                    <th class="p-4 border-b font-semibold text-sm text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4 border-b font-medium text-gray-800">#{{ order.id }}</td>
+                    <td class="p-4 border-b font-bold text-gray-800">{{ order.rute }}</td>
+                    <td class="p-4 border-b text-sm text-gray-600">
+                        <span class="font-bold">{{ order.jenis_layanan }}</span><br>
+                        {{ order.jenis_armada }} ({{ order.jumlah_unit }} Unit)<br>
+                        <i class="text-gray-400">{{ order.detail_barang }}</i>
+                    </td>
+                    <td class="p-4 border-b font-semibold">{{ order.total_harga|rupiah }}</td>
+                    <td class="p-4 border-b">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium text-white 
+                            {% if order.status_order == 'Pending' %}bg-yellow-500
+                            {% elif order.status_order == 'Valid' %}bg-green-500
+                            {% else %}bg-red-500{% endif %}">
+                            {% if order.status_order == 'Tidak Valid' %}Dibatalkan{% else %}{{ order.status_order }}{% endif %}
+                        </span>
+                    </td>
+                    <td class="p-4 border-b">
+                        {% if order.status_order == 'Tidak Valid' %}
+                            <span class="text-xs text-gray-400">-</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium text-white {% if order.status_pembayaran == 'Lunas' %}bg-green-500{% else %}bg-yellow-500{% endif %}">
+                                {{ order.status_pembayaran }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 border-b text-center align-top">
+                        {% if order.status_order == 'Tidak Valid' %}
+                            <span class="text-xs text-gray-400">-</span>
+                        {% elif order.status_pembayaran == 'Belum Bayar' %}
+                            <form method="POST" action="/order/{{ order.id }}/konfirmasi_bayar">
+                                <button type="submit" class="w-full mb-1 bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">Konfirmasi Sudah Bayar</button>
+                            </form>
+                            <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="POST" class="mt-2">
+                                <input type="text" name="alasan" placeholder="Alasan batal (wajib)..." required class="text-xs border border-gray-300 p-1.5 rounded w-full mb-1 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded w-full transition-colors shadow-sm font-medium" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                                    Batalkan Pesanan
+                                </button>
+                            </form>
+                        {% elif order.status_pembayaran in ['Menunggu Validasi', 'Menunggu Pembayaran'] %}
+                            <span class="text-xs text-gray-500 font-medium italic">Menunggu Konfirmasi Admin</span>
+                        {% else %}
+                            <span class="text-xs text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="p-8 text-center text-gray-500 italic border-b">Belum ada order.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endif %}
 {% endblock %}

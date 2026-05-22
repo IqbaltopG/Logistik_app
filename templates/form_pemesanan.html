@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Pemesanan FTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 md:p-6">
+
+    <!-- Centered Container -->
+    <div class="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 md:p-10">
+        <div class="mb-8 text-center">
+            <h2 class="text-3xl font-bold text-gray-800">Form Pemesanan Logistik</h2>
+            <p class="text-gray-500 mt-2">Layanan Full Truck Load (FTL)</p>
+        </div>
+
+        <!-- Form Elements -->
+        <form action="{{ url_for('orders') }}" method="POST" class="space-y-6">
+            
+            <!-- 1. Pilih Rute -->
+            <div>
+                <label for="rute" class="block text-sm font-semibold text-gray-700 mb-2">Pilih Rute Pengiriman</label>
+                <select id="rute" name="rute" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition-colors">
+                    <option value="" disabled selected>-- Pilih Rute --</option>
+                    {% for rute in rutes %}
+                        <option value="{{ rute }}">{{ rute }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Tambahan: Detail Barang (Wajib untuk database backend) -->
+            <div>
+                <label for="detail_barang" class="block text-sm font-semibold text-gray-700 mb-2">Detail Muatan</label>
+                <textarea id="detail_barang" name="detail_barang" rows="2" required placeholder="Contoh: 100 Sak Semen, Pipa Besi, dll..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"></textarea>
+            </div>
+
+            <!-- 2. Jenis Layanan -->
+            <div>
+                <label for="jenis_layanan" class="block text-sm font-semibold text-gray-700 mb-2">Jenis Layanan</label>
+                <select id="jenis_layanan" name="jenis_layanan" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition-colors">
+                    <option value="" disabled selected>-- Pilih Layanan --</option>
+                    <option value="Cargo">Cargo</option>
+                    <option value="Container">Container</option>
+                </select>
+            </div>
+
+            <!-- 3. Pilih Armada -->
+            <div>
+                <label for="jenis_armada" class="block text-sm font-semibold text-gray-700 mb-2">Pilih Armada</label>
+                <select id="jenis_armada" name="jenis_armada" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition-colors">
+                    <option value="" disabled selected>-- Pilih Armada --</option>
+                    <option value="CDD">CDD (Kapasitas Max 4 Ton)</option>
+                    <option value="Fuso">Fuso (Kapasitas Max 8 Ton)</option>
+                    <option value="Tronton">Tronton (Kapasitas Max 15 Ton)</option>
+                    <option value="Trailer 20 Feet">Trailer 20 Feet (Container/Cargo Max 30 Ton)</option>
+                    <option value="Trailer 40 Feet">Trailer 40 Feet (Container/Cargo Max 30 Ton)</option>
+                </select>
+            </div>
+
+            <!-- 4. Jumlah Unit & 5. Tombol Submit -->
+            <div class="flex flex-col md:flex-row gap-4 pt-4">
+                <input type="number" id="jumlah_unit" name="jumlah_unit" min="1" value="1" required class="w-full md:w-1/3 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-center font-semibold text-gray-700">
+                <button type="submit" class="w-full md:w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-lg">Hitung Harga & Pesan</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

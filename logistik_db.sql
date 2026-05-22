@@ -16,44 +16,42 @@ CREATE TABLE users (
 
 CREATE TABLE tarif (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    kota_asal VARCHAR(100) NOT NULL,
-    kota_tujuan VARCHAR(100) NOT NULL,
-    harga_dasar FLOAT NOT NULL,
-    harga_per_kg FLOAT NOT NULL,
-    harga_per_m3 FLOAT NOT NULL
+    rute VARCHAR(255) NOT NULL,
+    harga_cdd INT NOT NULL,
+    harga_fuso INT NOT NULL,
+    harga_tronton INT NOT NULL,
+    harga_trailer INT NOT NULL
 );
 
-INSERT INTO tarif (kota_asal, kota_tujuan, harga_dasar, harga_per_kg, harga_per_m3) VALUES
-('Balikpapan', 'Samarinda', 500000, 2000, 50000),
-('Samarinda', 'Bontang', 600000, 2500, 60000),
-('Balikpapan', 'Kutai Kartanegara', 700000, 3000, 70000),
-('Kutai Kartanegara', 'Kutai Timur', 800000, 3500, 80000);
 
 CREATE TABLE armada (
     id INT AUTO_INCREMENT PRIMARY KEY,
     plat_nomor VARCHAR(50) NOT NULL UNIQUE,
-    tipe_armada ENUM('Tronton', 'Trailer', 'Dolly') NOT NULL,
+    tipe_armada ENUM('CDD', 'Fuso', 'Tronton', 'Trailer', 'Trailer 20 Feet', 'Trailer 40 Feet', 'Dolly') NOT NULL,
     status ENUM('Tersedia', 'Beroperasi') DEFAULT 'Tersedia'
 );
 
 INSERT INTO armada (plat_nomor, tipe_armada, status) VALUES
-('KT 8001 AA', 'Tronton', 'Tersedia'),
-('KT 8002 BB', 'Trailer', 'Tersedia'),
-('KT 8003 CC', 'Dolly', 'Beroperasi');
+('KT 8001 AA', 'CDD', 'Tersedia'),
+('KT 8002 BB', 'Fuso', 'Tersedia'),
+('KT 8003 CC', 'Tronton', 'Tersedia'),
+('KT 8004 DD', 'Trailer 20 Feet', 'Beroperasi'),
+('KT 8005 EE', 'Trailer 40 Feet', 'Tersedia');
 
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     detail_barang TEXT NOT NULL,
-    tipe_barang ENUM('Container', 'Cargo') NOT NULL,
-    kota_asal VARCHAR(100) NOT NULL,
-    kota_tujuan VARCHAR(100) NOT NULL,
-    berat_kg FLOAT NOT NULL,
-    dimensi_p FLOAT DEFAULT NULL,
-    dimensi_l FLOAT DEFAULT NULL,
-    dimensi_t FLOAT DEFAULT NULL,
-    estimasi_harga FLOAT NOT NULL,
+    jenis_layanan VARCHAR(50) NOT NULL,
+    rute VARCHAR(255) NOT NULL,
+    jenis_armada VARCHAR(50) NOT NULL,
+    jumlah_unit INT DEFAULT 1,
+    total_harga INT NOT NULL,
     status_order ENUM('Pending', 'Valid', 'Tidak Valid') DEFAULT 'Pending', 
+    status_pembayaran VARCHAR(50) DEFAULT 'Belum Bayar',
+    no_resi VARCHAR(100) UNIQUE NULL,
+    alasan_pembatalan TEXT NULL,
+    cancelled_by ENUM('Customer', 'Admin') NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
