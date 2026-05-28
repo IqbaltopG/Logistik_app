@@ -16,13 +16,13 @@ def clean_price(value):
 
 def import_tarif_from_csv(file_path):
     if not os.path.exists(file_path):
-        print(f"❌ Error: File '{file_path}' tidak ditemukan.")
+        print(f"Error: File '{file_path}' tidak ditemukan.")
         return
 
     print(f"Membaca data dari {file_path}...")
     
     with app.app_context():
-        # Hapus data lama agar selaras persis dengan CSV baru (mencegah numpuk)
+        # Hapus data lama agar selaras dengan CSV baru
         db.session.query(Tarif).delete()
         
         tarifs = {}
@@ -76,9 +76,9 @@ def import_tarif_from_csv(file_path):
         if tarif_list:
             db.session.add_all(tarif_list)
             db.session.commit()
-            print(f"✅ Berhasil mengimpor & sinkronisasi {len(tarif_list)} data rute ke dalam tabel Tarif!")
+            print(f"Berhasil mengimpor {len(tarif_list)} data rute ke dalam tabel Tarif.")
         else:
-            print("⚠️ Tidak ada data yang valid ditemukan di dalam file CSV.")
+            print("Tidak ada data yang valid ditemukan di dalam file CSV.")
 
 if __name__ == '__main__':
     csv_filename = 'SIMLOG TUBES - Sheet1.csv'

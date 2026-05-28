@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+from typing import List, Dict, Any
+from sqlalchemy.orm import joinedload
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -18,7 +20,7 @@ app.jinja_env.filters['rupiah'] = format_rupiah
 
 db = SQLAlchemy(app)
 
-# --- MODELS ---
+# Models
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -72,7 +74,67 @@ class Pengiriman(db.Model):
     
     armada = db.relationship('Armada', backref='pengiriman', lazy=True)
 
-# --- DECORATORS ---
+# Exceptions
+class ValidationError(Exception):
+    pass
+
+# Repositories
+class OrderRepository:
+    @staticmethod
+    def get_all_with_users() -> List[Order]:
+        return Order.query.options(joinedload(Order.user)).order_by(Order.id.desc()).all()
+        
+    @staticmethod
+    def get_by_user(user_id: int) -> List[Order]:
+        return Order.query.filter_by(user_id=user_id).order_by(Order.id.desc()).all()
+
+# Services
+class OrderService:
+    @staticmethod
+    def calculate_price(rute: str, jenis_armada: str, jumlah_unit: int) -> int:
+        tarif = Tarif.query.filter_by(rute=rute).first()
+        if not tarif:
+            raise ValidationError("Tarif rute tidak ditemukan.")
+            
+        harga_map: Dict[str, int] = {
+            'CDD': tarif.harga_cdd,
+            'Fuso': tarif.harga_fuso,
+            'Tronton': tarif.harga_tronton,
+            'Trailer 20 Feet': tarif.harga_trailer,
+            'Trailer 40 Feet': tarif.harga_trailer
+        }
+        
+        harga_satuan = harga_map.get(jenis_armada)
+        if not harga_satuan:
+            raise ValidationError("Jenis armada tidak valid.")
+            
+        return harga_satuan * max(1, jumlah_unit)
+        
+    @staticmethod
+    def create_order(user_id: int, form_data: Any) -> Order:
+        rute = str(form_data.get('rute', '')).strip()
+        detail = str(form_data.get('detail_barang', '')).strip()[:1000]
+        jenis_layanan = str(form_data.get('jenis_layanan', '')).strip()
+        jenis_armada = str(form_data.get('jenis_armada', '')).strip()
+        
+        try:
+            jumlah_unit = int(form_data.get('jumlah_unit', 1))
+        except ValueError:
+            raise ValidationError("Jumlah unit harus berupa angka.")
+            
+        total_harga = OrderService.calculate_price(rute, jenis_armada, jumlah_unit)
+        
+        new_order = Order(
+            user_id=user_id, detail_barang=detail, 
+            jenis_layanan=jenis_layanan, rute=rute, 
+            jenis_armada=jenis_armada, jumlah_unit=jumlah_unit, 
+            total_harga=total_harga
+        )
+        db.session.add(new_order)
+        db.session.commit()
+        return new_order
+
+# Decorators
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -97,7 +159,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- ROUTES ---
+# Routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -154,8 +216,11 @@ def dashboard():
         total_orders = Order.query.filter_by(user_id=session['user_id']).count()
         pending_orders = Order.query.filter_by(user_id=session['user_id'], status_order='Pending').count()
         valid_orders = Order.query.filter_by(user_id=session['user_id'], status_order='Valid').count()
-        pengiriman_berjalan = db.session.query(Pengiriman).join(Order).filter(Order.user_id == session['user_id'], Pengiriman.status_pengiriman == 'Di Perjalanan').count()
-        pengiriman_selesai = db.session.query(Pengiriman).join(Order).filter(Order.user_id == session['user_id'], Pengiriman.status_pengiriman == 'Terkirim').count()
+        
+        # Hitung status pengiriman user
+        base_query = db.session.query(Pengiriman.id).join(Order).filter(Order.user_id == session['user_id'])
+        pengiriman_berjalan = base_query.filter(Pengiriman.status_pengiriman == 'Di Perjalanan').count()
+        pengiriman_selesai = base_query.filter(Pengiriman.status_pengiriman == 'Terkirim').count()
     
     return render_template('dashboard.html', 
                            total_orders=total_orders,
@@ -178,23 +243,14 @@ def cek_harga():
         if not hasil:
             flash('Tarif tidak ditemukan untuk rute tersebut.', 'error')
         else:
-            harga_satuan = 0
-            if jenis_armada == 'CDD':
-                harga_satuan = hasil.harga_cdd
-            elif jenis_armada == 'Fuso':
-                harga_satuan = hasil.harga_fuso
-            elif jenis_armada == 'Tronton':
-                harga_satuan = hasil.harga_tronton
-            elif jenis_armada in ['Trailer 20 Feet', 'Trailer 40 Feet']:
-                harga_satuan = hasil.harga_trailer
-                
-            kalkulasi = {
-                'rute': rute,
-                'jenis_armada': jenis_armada,
-                'jumlah_unit': jumlah_unit,
-                'harga_satuan': harga_satuan,
-                'total_harga': harga_satuan * jumlah_unit
-            }
+            try:
+                total_harga = OrderService.calculate_price(rute, jenis_armada, jumlah_unit)
+                kalkulasi = {
+                    'rute': rute, 'jenis_armada': jenis_armada, 'jumlah_unit': jumlah_unit,
+                    'harga_satuan': total_harga // max(1, jumlah_unit), 'total_harga': total_harga
+                }
+            except ValidationError as e:
+                flash(str(e), 'error')
             
     rutes = db.session.query(Tarif.rute).distinct().all()
     return render_template('cek_harga.html', hasil=hasil, kalkulasi=kalkulasi, rutes=[r[0] for r in rutes])
@@ -203,42 +259,23 @@ def cek_harga():
 @login_required
 def orders():
     if request.method == 'POST' and session['role'] == 'customer':
-        rute = request.form.get('rute')
-        detail = request.form.get('detail_barang')
-        jenis_layanan = request.form.get('jenis_layanan')
-        jenis_armada = request.form.get('jenis_armada')
-        jumlah_unit = int(request.form.get('jumlah_unit') or 1)
-        
-        tarif = Tarif.query.filter_by(rute=rute).first()
-        total_harga = 0
-        if tarif:
-            harga_satuan = 0
-            if jenis_armada == 'CDD':
-                harga_satuan = tarif.harga_cdd
-            elif jenis_armada == 'Fuso':
-                harga_satuan = tarif.harga_fuso
-            elif jenis_armada == 'Tronton':
-                harga_satuan = tarif.harga_tronton
-            elif jenis_armada in ['Trailer 20 Feet', 'Trailer 40 Feet']:
-                harga_satuan = tarif.harga_trailer
-                
-            total_harga = harga_satuan * jumlah_unit
-            
-        new_order = Order(user_id=session['user_id'], detail_barang=detail, 
-                          jenis_layanan=jenis_layanan, rute=rute, 
-                          jenis_armada=jenis_armada, jumlah_unit=jumlah_unit, 
-                          total_harga=total_harga)
-        db.session.add(new_order)
-        db.session.commit()
+        try:
+            OrderService.create_order(session['user_id'], request.form)
+            flash('Order berhasil dibuat dan masuk antrean.', 'success')
+        except ValidationError as e:
+            flash(f"Validasi Gagal: {str(e)}", 'error')
+        except Exception as e:
+            flash("Terjadi anomali server (State exception), permintaan digugurkan.", 'error')
         return redirect(url_for('orders'))
     
     if session['role'] == 'admin':
         # Set default tab 'belum_bayar' jika parameter tab kosong
         if not request.args.get('tab'):
             return redirect(url_for('orders', tab='belum_bayar'))
-        all_orders = Order.query.order_by(Order.id.desc()).all()
+        
+        all_orders = OrderRepository.get_all_with_users()
     else:
-        all_orders = Order.query.filter_by(user_id=session['user_id']).order_by(Order.id.desc()).all()
+        all_orders = OrderRepository.get_by_user(session['user_id'])
         
     rutes = db.session.query(Tarif.rute).distinct().all()
     return render_template('orders.html', orders=all_orders, rutes=[r[0] for r in rutes])

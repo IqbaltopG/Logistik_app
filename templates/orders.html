@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <!-- Single Table Dinamis Berdasarkan Tab -->
+    <!-- Tabel Data Order -->
     <div class="bg-white rounded-xl shadow-md overflow-x-auto border border-gray-100 mb-8">
         <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700 border-b">
@@ -145,20 +145,21 @@
                                         <button type="submit" class="w-full bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-600 transition-colors shadow-sm whitespace-nowrap">Tolak</button>
                                     </form>
                                 {% elif active_tab == 'lunas' %}
-                                    <div class="flex items-center gap-3">
-                                        <form method="POST" action="/orders/edit/{{ order.id }}" class="flex items-center gap-2">
-                                            <input type="hidden" name="status_pembayaran" value="Lunas">
-                                            <input type="text" name="no_resi" value="{{ order.no_resi or '' }}" placeholder="No. Resi" class="py-1.5 px-3 border border-gray-300 rounded-md text-sm w-36 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm" required>
-                                            <button type="submit" class="bg-gray-800 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm whitespace-nowrap">Simpan</button>
-                                        </form>
-                                        <div class="h-6 w-px bg-gray-300"></div>
-                                        <form method="POST" action="/orders/validate/{{ order.id }}">
-                                            <input type="hidden" name="status_order" value="Valid">
-                                            <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">Proses</button>
-                                        </form>
+                                    <div class="flex flex-col space-y-2 w-48">
+                                        <div class="flex flex-col gap-1">
+                                            <form method="POST" action="/orders/edit/{{ order.id }}" class="flex items-center gap-1">
+                                                <input type="hidden" name="status_pembayaran" value="Lunas">
+                                                <input type="text" name="no_resi" value="{{ order.no_resi or '' }}" placeholder="No. Resi" class="p-1 border border-gray-300 rounded-md text-xs w-full focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm" required>
+                                                <button type="submit" class="bg-gray-800 text-white px-2 py-1 rounded-md text-xs font-medium hover:bg-gray-900 transition-colors shadow-sm whitespace-nowrap">Simpan</button>
+                                            </form>
+                                            <form method="POST" action="/orders/validate/{{ order.id }}">
+                                                <input type="hidden" name="status_order" value="Valid">
+                                                <button type="submit" class="w-full bg-blue-600 text-white p-1 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">Proses</button>
+                                            </form>
+                                        </div>
                                         <form method="POST" action="/admin/order/{{ order.id }}/tolak" class="flex flex-col gap-1">
-                                            <input type="text" name="alasan" placeholder="Alasan penolakan..." required class="py-1 px-2 border border-gray-300 rounded-md text-xs w-32 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm">
-                                            <button type="submit" class="w-full bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-600 transition-colors shadow-sm whitespace-nowrap">Tolak</button>
+                                            <input type="text" name="alasan" placeholder="Alasan penolakan..." required class="p-1 border border-gray-300 rounded-md text-xs w-full focus:ring-red-500 focus:border-red-500 outline-none shadow-sm">
+                                            <button type="submit" class="w-full bg-red-500 text-white p-1 rounded-md text-xs font-medium hover:bg-red-600 transition-colors shadow-sm whitespace-nowrap">Tolak</button>
                                         </form>
                                     </div>
                                 {% elif active_tab == 'history' %}
@@ -187,7 +188,7 @@
 
 {% else %}
 
-    <!-- TAMPILAN CUSTOMER: Bersih tanpa logika admin -->
+    <!-- Tampilan Customer -->
     <div class="bg-white rounded-xl shadow-md overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>

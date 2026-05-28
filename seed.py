@@ -12,21 +12,21 @@ def seed_database():
     Fungsi untuk mengisi database dengan data dummy.
     """
     with app.app_context():
-        print("🔄 Membaca data dari database yang sudah ada...")
+        print("Membaca data dari database...")
 
-        # === 1. Validasi Users ===
+        # Users
         admin = User.query.filter_by(role='admin').first()
         if not admin:
-            print("👑 Membuat akun Admin default...")
+            print("Membuat akun Admin default...")
             default_admin = User(username='admin', password=generate_password_hash('admin'), role='admin')
             db.session.add(default_admin)
             db.session.commit()
 
         customers = User.query.filter_by(role='customer').all()
         if not customers:
-            print("👤 Membuat dummy Customers tambahan karena tidak ada di database...")
+            print("Membuat dummy Customers...")
             dummy_users = []
-            default_password = generate_password_hash('password') # Hashing cukup 1x agar seeding lebih efisien
+            default_password = generate_password_hash('password')
             for _ in range(10):
                 customer = User(
                     username=fake.user_name(),
@@ -38,11 +38,11 @@ def seed_database():
             db.session.commit()
             customers = User.query.filter_by(role='customer').all()
 
-        # === 2. Generate Orders (Orang yang memesan dari data yg ada) ===
-        print("📦 Membuat data Orders berdasarkan data dari database...")
+        # Orders
+        print("Membuat data Orders...")
         all_tarifs = Tarif.query.all()
         if not all_tarifs:
-            print("⚠️ Data Tarif kosong! Harap import atau tambahkan data Tarif di database.")
+            print("Data Tarif kosong! Harap import atau tambahkan data Tarif di database.")
             return
             
         orders = []
@@ -86,8 +86,8 @@ def seed_database():
         db.session.add_all(orders)
         db.session.commit()
 
-        # === 3. Generate Pengiriman (untuk Order 'Valid') ===
-        print("🚛 Membuat data Pengiriman untuk order yang valid...")
+        # Pengiriman
+        print("Membuat data Pengiriman...")
         valid_orders = Order.query.filter_by(status_order='Valid').all()
         available_armadas = Armada.query.filter(Armada.status.in_(['Tersedia', 'Beroperasi'])).all()
         pengirimans = []

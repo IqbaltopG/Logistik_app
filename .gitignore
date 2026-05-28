@@ -8,9 +8,12 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Environment variables (kalau misal nanti lu pake)
+# Environment variables
 .env
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Local scripts
+run_dev.sh
