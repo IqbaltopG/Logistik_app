@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime
 from faker import Faker
 from app import app, db, User, Tarif, Armada, Order, Pengiriman
 from werkzeug.security import generate_password_hash
@@ -12,6 +13,16 @@ def seed_database():
     Fungsi untuk mengisi database dengan data dummy.
     """
     with app.app_context():
+        # Cek dan tambahkan kolom jika belum ada di database
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        if inspector.has_table('orders'):
+            columns = [col['name'] for col in inspector.get_columns('orders')]
+            if 'tanggal_order' not in columns:
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN tanggal_order DATETIME DEFAULT CURRENT_TIMESTAMP"))
+                    conn.commit()
+
         print("Membaca data dari database...")
 
         # Users
@@ -79,6 +90,7 @@ def seed_database():
                 status_order=status_order,
                 status_pembayaran=status_pembayaran,
                 no_resi=no_resi,
+                tanggal_order=fake.date_time_between(start_date=datetime(2025, 1, 1), end_date=datetime(2026, 6, 30)),
                 alasan_pembatalan=fake.sentence() if status_order == 'Tidak Valid' else None,
                 cancelled_by=random.choice(['Customer', 'Admin']) if status_order == 'Tidak Valid' else None
             )

@@ -49,7 +49,8 @@ CREATE TABLE orders (
     total_harga INT NOT NULL,
     status_order ENUM('Pending', 'Valid', 'Tidak Valid') DEFAULT 'Pending', 
     status_pembayaran VARCHAR(50) DEFAULT 'Belum Bayar',
-    no_resi VARCHAR(100) UNIQUE NULL,
+    no_resi VARCHAR(50) UNIQUE NULL,
+    tanggal_order DATETIME DEFAULT CURRENT_TIMESTAMP,
     alasan_pembatalan TEXT NULL,
     cancelled_by ENUM('Customer', 'Admin') NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

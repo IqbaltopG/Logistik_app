@@ -1,17 +1,28 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from typing import List, Dict, Any
 from sqlalchemy.orm import joinedload
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import pandas as pd
+from io import BytesIO
+import random
+import string
+import os
+import logging
+
+# Konfigurasi Logging Profesional
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'rahasia-logistik-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/logistik_db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'rahasia-logistik-2026')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+pymysql://root:@localhost/logistik_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 def format_rupiah(value):
-    """Format number to Indonesian Rupiah currency format."""
+    """Format angka ke dalam format mata uang Rupiah Indonesia."""
     if value is None:
         return "Rp 0"
     return f"Rp {int(value):,}".replace(',', '.')
@@ -57,7 +68,8 @@ class Order(db.Model):
     total_harga = db.Column(db.Integer, nullable=False)
     status_order = db.Column(db.Enum('Pending', 'Valid', 'Tidak Valid'), default='Pending')
     status_pembayaran = db.Column(db.String(50), default='Belum Bayar')
-    no_resi = db.Column(db.String(100), nullable=True, unique=True)
+    no_resi = db.Column(db.String(50), nullable=True, unique=True)
+    tanggal_order = db.Column(db.DateTime, default=datetime.utcnow)
     alasan_pembatalan = db.Column(db.Text, nullable=True)
     cancelled_by = db.Column(db.Enum('Customer', 'Admin'), nullable=True)
     
@@ -265,7 +277,8 @@ def orders():
         except ValidationError as e:
             flash(f"Validasi Gagal: {str(e)}", 'error')
         except Exception as e:
-            flash("Terjadi anomali server (State exception), permintaan digugurkan.", 'error')
+            logger.error(f"System Exception during order creation: {str(e)}")
+            flash("Terjadi kesalahan sistem. Permintaan digugurkan.", 'error')
         return redirect(url_for('orders'))
     
     if session['role'] == 'admin':
@@ -275,7 +288,7 @@ def orders():
         
         all_orders = OrderRepository.get_all_with_users()
     else:
-        all_orders = OrderRepository.get_by_user(session['user_id'])
+        all_orders = Order.query.filter_by(user_id=session['user_id']).all()
         
     rutes = db.session.query(Tarif.rute).distinct().all()
     return render_template('orders.html', orders=all_orders, rutes=[r[0] for r in rutes])
@@ -286,6 +299,20 @@ def orders():
 def validate_order(id):
     order = Order.query.get_or_404(id)
     status = request.form.get('status_order')
+    no_resi = request.form.get('no_resi')
+    
+    if status == 'Valid':
+        if not no_resi or not no_resi.strip():
+            flash('Tidak dapat memproses pesanan: Nomor Resi harus diisi.', 'error')
+            return redirect(url_for('orders', tab='lunas'))
+            
+        existing_resi = Order.query.filter(Order.no_resi == no_resi, Order.id != id).first()
+        if existing_resi:
+            flash('Nomor Resi tersebut sudah digunakan di order lain.', 'error')
+            return redirect(url_for('orders', tab='lunas'))
+            
+        order.no_resi = no_resi
+        
     if status in ['Valid', 'Tidak Valid']:
         order.status_order = status
         if status == 'Tidak Valid':
@@ -361,6 +388,10 @@ def edit_order_admin(id):
     order = Order.query.get_or_404(id)
     status_pembayaran = request.form.get('status_pembayaran')
     no_resi = request.form.get('no_resi')
+
+    if no_resi is not None and not no_resi.strip():
+        flash("Resi tidak boleh kosong", "error")
+        return redirect(url_for('orders'))
     
     if status_pembayaran in ['Belum Bayar', 'Lunas']:
         order.status_pembayaran = status_pembayaran
@@ -447,16 +478,33 @@ def pengiriman():
         db.session.commit()
         return redirect(url_for('pengiriman'))
     
+    tab = request.args.get('tab', 'proses')
+    
     if session['role'] == 'admin':
         orders_ready = Order.query.filter_by(status_order='Valid', status_pembayaran='Lunas').filter(~Order.pengiriman.has()).all()
-        all_pengiriman = Pengiriman.query.all()
+        
+        query = Pengiriman.query
+        if tab == 'proses':
+            query = query.filter_by(status_pengiriman='Penjadwalan')
+        elif tab == 'perjalanan':
+            query = query.filter_by(status_pengiriman='Di Perjalanan')
+        elif tab == 'terkirim':
+            query = query.filter_by(status_pengiriman='Terkirim')
+        all_pengiriman = query.all()
         armada_tersedia = Armada.query.filter_by(status='Tersedia').all()
     else:
         orders_ready = []
-        all_pengiriman = db.session.query(Pengiriman).join(Order).filter(Order.user_id == session['user_id']).all()
+        query = Pengiriman.query.join(Order).filter(Order.user_id == session['user_id'])
+        if tab == 'proses':
+            query = query.filter(Pengiriman.status_pengiriman == 'Penjadwalan')
+        elif tab == 'perjalanan':
+            query = query.filter(Pengiriman.status_pengiriman == 'Di Perjalanan')
+        elif tab == 'terkirim':
+            query = query.filter(Pengiriman.status_pengiriman == 'Terkirim')
+        all_pengiriman = query.all()
         armada_tersedia = []
         
-    return render_template('pengiriman.html', orders_ready=orders_ready, pengiriman=all_pengiriman, armada_tersedia=armada_tersedia)
+    return render_template('pengiriman.html', orders_ready=orders_ready, pengiriman=all_pengiriman, armada_tersedia=armada_tersedia, active_tab=tab)
 
 @app.route('/pengiriman/update/<int:id>', methods=['POST'])
 @login_required
@@ -469,6 +517,9 @@ def update_pengiriman(id):
     if status in ['Penjadwalan', 'Di Perjalanan', 'Terkirim']:
         p.status_pengiriman = status
         if status == 'Terkirim':
+            if not epod or not epod.strip():
+                # Auto-generate POD if submitted empty
+                epod = f"POD-{''.join(random.choices(string.ascii_uppercase, k=6))}"
             p.epod_ref = epod
             if p.armada:
                 p.armada.status = 'Tersedia'
@@ -540,6 +591,77 @@ def cek_resi():
             
     return render_template('cek_resi.html', order=order, no_resi=no_resi)
 
+@app.route('/export/report')
+@login_required
+@admin_required
+def export_report():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    query = Order.query
+    
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(Order.tanggal_order >= start_dt, Order.tanggal_order <= end_dt)
+        except ValueError:
+            pass # Fallback to all if date parsing fails
+            
+    orders = query.all()
+    if not orders:
+        flash("Void: Tidak ada transaksi pada rentang waktu tersebut.", "warning")
+        return redirect(url_for('dashboard'))
+        
+    data = [{
+        'ID': o.id,
+        'Tanggal': o.tanggal_order.strftime('%Y-%m-%d %H:%M:%S') if o.tanggal_order else '',
+        'Resi': o.no_resi,
+        'Tarif': o.total_harga,
+        'Status': o.status_order,
+        'Total': o.total_harga
+    } for o in orders]
+    
+    df = pd.DataFrame(data)
+    
+    # Menambahkan baris Total Pendapatan (hanya dari pesanan yang Valid)
+    total_pendapatan = sum(o.total_harga for o in orders if o.status_order == 'Valid')
+    summary_row = pd.DataFrame([{
+        'ID': '',
+        'Tanggal': '',
+        'Resi': '',
+        'Tarif': '',
+        'Status': 'TOTAL PENDAPATAN (VALID):',
+        'Total': total_pendapatan
+    }])
+    df = pd.concat([df, summary_row], ignore_index=True)
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Rekap Laporan')
+        
+        worksheet = writer.sheets['Rekap Laporan']
+        
+        # Format mata uang Rupiah untuk kolom Tarif (D) dan Total (F)
+        for col_letter in ['D', 'F']:
+            for cell in worksheet[col_letter]:
+                if cell.row > 1 and isinstance(cell.value, (int, float)):
+                    cell.number_format = '"Rp" #,##0'
+                    
+        # Auto-fit lebar kolom agar teks tidak terpotong menjadi ######
+        for col in worksheet.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                if cell.value is not None:
+                    # Tambahkan padding ekstra 8 karakter khusus untuk angka/uang
+                    extra_padding = 8 if isinstance(cell.value, (int, float)) else 2
+                    max_length = max(max_length, len(str(cell.value)) + extra_padding)
+            worksheet.column_dimensions[col_letter].width = max_length
+            
+    output.seek(0)
+    return send_file(output, download_name='Rekap_Logistik.xlsx', as_attachment=True)
+
 @app.cli.command("seed")
 def seed_command():
     """Mengisi database dengan data dummy."""
@@ -550,6 +672,16 @@ def seed_command():
 
 def init_dummy_users():
     with app.app_context():
+        # Auto-patch missing columns for existing database
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        if inspector.has_table('orders'):
+            columns = [col['name'] for col in inspector.get_columns('orders')]
+            if 'tanggal_order' not in columns:
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN tanggal_order DATETIME DEFAULT CURRENT_TIMESTAMP"))
+                    conn.commit()
+
         db.create_all()
         if User.query.first() is None:
             admin = User(username='admin', password=generate_password_hash('admin'), role='admin')
